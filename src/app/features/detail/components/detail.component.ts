@@ -1,16 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { take, tap  } from 'rxjs/operators';;
 import { Participation } from '../../../shared/models/participation.model'
 import { ColorService } from 'src/app/shared/services/colors.service';
 import { OlympicService } from 'src/app/shared/services/olympic.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-detail',
   templateUrl: './detail.component.html'
 })
-export class DetailComponent implements OnInit {
+export class DetailComponent implements OnInit, OnDestroy {
   errorMessage! : string;
   country! : string;
   numOfEntries : number = 0
@@ -30,6 +31,7 @@ export class DetailComponent implements OnInit {
    colorScheme = {
      domain: this.colorService.getNbColorRandom(1)
    };
+   olympics$! : Subscription;
   tabDataOlympicParticipations : Array<{name: string, series: Array<{name: string, value : number}>}> = []
   view: number[] = [700, 300];
 
@@ -38,7 +40,11 @@ export class DetailComponent implements OnInit {
       private olympicService : OlympicService,
       private colorService: ColorService){}
 
-  
+  ngOnDestroy(): void {
+    if (this.olympics$)
+      this.olympics$.unsubscribe();
+  }
+
   ngOnInit(): void {
     this.view = [window.innerWidth, 400]
     this.country = this.route.snapshot.paramMap.get("name")!;
@@ -50,7 +56,7 @@ export class DetailComponent implements OnInit {
   }
 
   getdataOlympics() {
-    this.olympicService.getDataOlympicsCountry(this.country).pipe(
+    this.olympics$ = this.olympicService.getDataOlympicsCountry(this.country).pipe(
       take(2),
       tap(
         (dataCountry) => {

@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { Observable, map, of, take, tap } from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Observable, Subscription, map, of, take, tap } from 'rxjs';
 import { OlympicService } from 'src/app/shared/services/olympic.service';
 import { LegendPosition} from '@swimlane/ngx-charts';
 import { Color } from '../../../shared/models/color.model';
@@ -12,8 +12,9 @@ import { OlympicCountry } from 'src/app/shared/models/olympic-country.model';
   selector: 'app-home',
   templateUrl: './home.component.html'
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   public olympics$: Observable<OlympicCountry[]> = of([]);
+  olympicsSubscribe! : Subscription
   numberOfJO: number = 0;
   view: number[] = [700, 400];
   tabChartOlympics! : object[]
@@ -29,11 +30,14 @@ export class HomeComponent implements OnInit {
      private colorService : ColorService,
      private router: Router) {}
 
+  ngOnDestroy(): void {
+    if (this.olympicsSubscribe)
+      this.olympicsSubscribe.unsubscribe();
+  }
+
   ngOnInit(): void {
     this.view = [window.innerWidth, 400]
-    this.olympics$ = this.olympicService.getOlympics();
-    
-    this.olympics$.pipe(
+    this.olympicsSubscribe = this.olympicService.getOlympics().pipe(
       take(2),
       tap(tabOlympics => {
         if (tabOlympics){
